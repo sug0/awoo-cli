@@ -283,8 +283,8 @@ def cmd_cd(sel, toks):
             print 'Already browsing "%s".' % sel.default
             return
         else:
-            print 'Now browsing "%s".' % sel.default
             sel.cd()
+            print 'Now browsing "%s".' % sel.default
             return
 
     try:
@@ -521,7 +521,7 @@ def cmd_last_cmd(sel, toks):
     """\
     Executes the last command again.
 
-    Usage: r|!!"""
+    Usage: r|repeat|!!"""
 
     if not sel.last_cmd:
         print 'No last command successfully executed in history.'
@@ -564,7 +564,8 @@ CMD_DICT = {
     'search': cmd_search,
     'find': cmd_search,
     '!!': cmd_last_cmd,
-    'r': cmd_last_cmd
+    'r': cmd_last_cmd,
+    'repeat': cmd_last_cmd,
 }
 
 def main():

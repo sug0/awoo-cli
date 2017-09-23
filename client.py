@@ -14,7 +14,7 @@ PAGER = environ.get('PAGER') or MORE
 EDITOR = environ.get('EDITOR') or ('notepad.exe' if os_name == 'nt' else 'vi')
 CLEAR = 'cls' if os_name == 'nt' else 'clear'
 TMP_ = environ.get('TMP') if os_name == 'nt' else '/tmp'
-DB_PATH = '%s%s%s' % (environ.get('HOME'), sep, '.awoo_threads_pinned.gz')
+DB_PATH = '%s%s%s' % (environ.get('HOME') or environ.get('HOMEPATH'), sep, '.awoo_threads_pinned.gz')
 DB = database.load(DB_PATH) or []
 PROMPT = colors.red('>>>')
 
@@ -219,7 +219,10 @@ def cmd_get_boards(_, _0):
 
     Usage: ls|gb|get_boards"""
 
-    print awoo.get_boards()
+    for board in awoo.get_boards():
+        stdout.write('%s  ' % board)
+
+    stdout.write('\n')
 
 def cmd_get_threads(sel, toks):
     """\
@@ -601,7 +604,7 @@ def main():
                 line = line.strip()
 
             # eval commands read
-            toks = line.split(' ')
+            toks = line.decode('utf-8').split(' ')
             eval_cmd(sel, toks)
         except (IOError, KeyboardInterrupt):
             stdout.write('\n')

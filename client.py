@@ -55,6 +55,10 @@ def remove_thr_database(thr):
     [DB.remove(t) for t in DB if t[0] == thr]
     flush_database()
 
+def remove_all_thr_database():
+    del DB[:]
+    flush_database()
+
 def less(data):
     process = Popen([PAGER], stdin=PIPE)
     data = data if isinstance(data, str) else str(data.encode('utf-8'))
@@ -458,6 +462,10 @@ def cmd_unpin_thread(_, toks):
 
     Usage: unpin [awoo thread]"""
 
+    if not DB:
+        print 'No threads in pinned list.'
+        return
+
     if len(toks) < 2:
         print 'No thread given.'
         return
@@ -467,11 +475,16 @@ def cmd_unpin_thread(_, toks):
     try:
         id = int(toks[1])
     except ValueError:
-        print 'Invalid thread id "%s".' % toks[1]
-        return
+        if toks[1] == 'all':
+            remove_all_thr_database()
+            print 'Successfully removed all threads from pinned list.'
+            return
+        else:
+            print 'Invalid thread id "%s".' % toks[1]
+            return
 
     if id not in [_id for _id, _ in DB]:
-        print 'Thread "%d" not in pinned list.' % id
+        print "Can't find \"%d\" in pinned list." % id
         return
 
     remove_thr_database(id)
@@ -482,6 +495,10 @@ def cmd_pinned(_, _0):
     Returns the list of pinned threads.
 
     Usage: pinned"""
+
+    if not DB:
+        print 'No threads in pinned list.'
+        return
 
     fmt = ''
 

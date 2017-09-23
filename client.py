@@ -279,13 +279,20 @@ def cmd_cd(sel, toks):
            cd|cb [awoo board]"""
 
     if len(toks) < 2:
-        print 'Now browsing "%s".' % sel.default
-        sel.cd()
-        return
+        if sel.board == sel.default:
+            print 'Already browsing "%s".' % sel.default
+            return
+        else:
+            print 'Now browsing "%s".' % sel.default
+            sel.cd()
+            return
 
     try:
-        sel.cd(toks[1])
-        print 'Now browsing "%s".' % toks[1]
+        if sel.board == toks[1]:
+            print 'Already browsing "%s".' % toks[1]
+        else:
+            sel.cd(toks[1])
+            print 'Now browsing "%s".' % toks[1]
     except awoo.AwooException:
         print "Board \"%s\" doesn't exist." % toks[1]
 
@@ -520,6 +527,7 @@ def cmd_last_cmd(sel, toks):
         print 'No last command successfully executed in history.'
         return
 
+    print ' '.join(sel.last_cmd)
     eval_cmd(sel, sel.last_cmd)
 
 # dictionary contains the appropriate functions

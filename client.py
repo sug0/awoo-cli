@@ -538,7 +538,15 @@ def main():
             stdout.write(colors.red('%s ' % PROMPT))
 
             # read line from stdin
-            line = stdin.readline().strip()
+            line = stdin.readline()
+
+            if not line:
+                # exit on 'EOF'
+                stdout.write('\n')
+                exit(0)
+            else:
+                # else strip the newline character
+                line = line.strip()
 
             # eval commands read
             eval_cmd(sel, line)

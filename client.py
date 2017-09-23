@@ -420,6 +420,15 @@ def cmd_search(_, toks):
                 replies = awoo.get_thread_replies(thr['post_id'])
 
                 if replies:
+                    comment = replies[0]['title'].lower()
+                    i = comment.find(query)
+
+                    if i >= 0:
+                        found = comment[i:41].replace('\r', '').replace('\n', ' ')
+                        fmt = colors.white('(...%s...)' % found, style='faint')
+                        id = colors.green(str(r['post_id']))
+                        print '    ', colors.cyan('|'), 'Found in title %s %s.' % (id, fmt)
+
                     for r in replies:
                         comment = r['comment'].lower()
                         i = comment.find(query)

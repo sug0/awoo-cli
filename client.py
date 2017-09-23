@@ -552,7 +552,7 @@ def main():
     while True:
         try:
             # print prompt
-            stdout.write(colors.red('%s ' % PROMPT))
+            stdout.write('%s ' % PROMPT)
 
             # read line from stdin
             line = stdin.readline()

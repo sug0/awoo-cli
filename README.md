@@ -4,7 +4,7 @@ An awoo client for the terminal. Feel like a hacker browsing through quality shi
 
 # Requirements
 
-`pip install -r requirements.txt`
+`$ pip install -r requirements.txt`
 
 # Usage
 

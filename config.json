@@ -1,0 +1,6 @@
+{
+    "use_ssl": true,
+    "host": "dangeru.us",
+    "port": 443,
+    "default_board": "all"
+}

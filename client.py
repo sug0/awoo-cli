@@ -1,8 +1,8 @@
 import awoo
 import colors
-import database
+import utils.database as database
 
-from colortrans import rgb2short
+from utils.colortrans import rgb2short
 from datetime import datetime
 from subprocess import Popen, PIPE
 from sys import stdin, stdout, exit

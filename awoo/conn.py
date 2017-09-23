@@ -32,7 +32,7 @@ def get_with_params(path, params, headers=None):
     c = _conn(cfg['host'], cfg['port'])
 
     if headers:
-        c.request('GET', path, params, headers)
+        c.request('GET', '%s?%s' % (path, params), None, headers)
     else:
         c.request('GET', path, params)
 

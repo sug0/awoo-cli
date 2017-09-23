@@ -34,6 +34,8 @@ class CurrentBoard:
         self.board = self.default
         self.desc = default['desc']
 
+        self.last_cmd = None
+
     def cd(self, board=None):
         board = board if board else self.default
         board = awoo.get_board_description(board)
@@ -118,11 +120,12 @@ def cap_or_hash(post):
 def comment_or_blankfag(post):
     return post['comment'] or colors.red('[[BLANKFAG]]')
 
-def eval_cmd(sel, line):
-    toks = line.split(' ')
-
+def eval_cmd(sel, toks):
     try:
         CMD_DICT[toks[0]](sel, toks)
+
+        if toks[0] != 'r' and toks[0] != '!!':
+            sel.last_cmd = toks
     except KeyError:
         if toks[0]:
             print 'Command "%s" not available. Try "help".' % toks[0]
@@ -507,6 +510,18 @@ def cmd_pinned(_, _0):
 
     less(fmt)
 
+def cmd_last_cmd(sel, toks):
+    """\
+    Executes the last command again.
+
+    Usage: r|!!"""
+
+    if not sel.last_cmd:
+        print 'No last command successfully executed in history.'
+        return
+
+    eval_cmd(sel, sel.last_cmd)
+
 # dictionary contains the appropriate functions
 # to call upon a certain command being read
 CMD_DICT = {
@@ -539,7 +554,9 @@ CMD_DICT = {
     'unpin': cmd_unpin_thread,
     'pinned': cmd_pinned,
     'search': cmd_search,
-    'find': cmd_search
+    'find': cmd_search,
+    '!!': cmd_last_cmd,
+    'r': cmd_last_cmd
 }
 
 def main():
@@ -566,7 +583,8 @@ def main():
                 line = line.strip()
 
             # eval commands read
-            eval_cmd(sel, line)
+            toks = line.split(' ')
+            eval_cmd(sel, toks)
         except (IOError, KeyboardInterrupt):
             stdout.write('\n')
             continue

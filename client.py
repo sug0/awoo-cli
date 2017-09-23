@@ -562,7 +562,7 @@ def main():
                 stdout.write('\n')
                 exit(0)
             else:
-                # else strip the newline character
+                # strip the newline character
                 line = line.strip()
 
             # eval commands read

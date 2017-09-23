@@ -17,9 +17,13 @@ except IOError:
 
 _conn = _https if cfg['use_ssl'] else _http
 
-def get(path):
+def get(path, headers=None):
     c = _conn(cfg['host'], cfg['port'])
-    c.request('GET', path)
+
+    if headers:
+        c.request('GET', path, None, headers)
+    else:
+        c.request('GET', path)
 
     return c.getresponse()
 
@@ -28,9 +32,9 @@ def get_with_params(path, params, headers=None):
     c = _conn(cfg['host'], cfg['port'])
 
     if headers:
-        c.request('GET', '%s?%s' % (path, params), headers)
+        c.request('GET', path, params, headers)
     else:
-        c.request('GET', '%s?%s' % (path, params))
+        c.request('GET', path, params)
 
     return c.getresponse()
 
@@ -49,7 +53,7 @@ def head(path, headers=None):
     c = _conn(cfg['host'], cfg['port'])
 
     if headers:
-        c.request('HEAD', path, headers)
+        c.request('HEAD', path, None, headers)
     else:
         c.request('HEAD', path)
 

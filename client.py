@@ -304,7 +304,7 @@ def cmd_send_reply(sel, toks):
     if not valid_thread:
         print 'Invalid thread id "%d".' % id
     else:
-        reply = edit_(TMP('reply_body'))
+        reply = edit_(TMP('reply_body_%d' % id))
 
         if reply:
             try:
@@ -353,13 +353,13 @@ def cmd_new_thread(sel, toks):
         print 'Please chooose a different board, "%s" is selected.' % sel.default
         return
 
-    title = edit_(TMP('title'))
+    title = edit_(TMP('thread_title_%s' % sel.board))
 
     if not title:
         print 'Empty title, not posting new thread.'
         return
 
-    reply = edit_(TMP('thread_body'))
+    reply = edit_(TMP('thread_body_%s' % sel.board))
 
     if not reply:
         print 'Empty body, not posting new thread.'

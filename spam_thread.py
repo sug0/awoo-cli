@@ -18,7 +18,7 @@ def main(argv):
 
     try:
         with open(argv[3], 'r') as f:
-            chunks = sep_chunks(f, 400)
+            chunks = sep_chunks(f)
             board = argv[1]
             thread = int(argv[2])
 
@@ -28,10 +28,10 @@ def main(argv):
             print 'Chunks to post: %d' % sz
 
             for chunk in chunks:
+                print 'Posting %d/%d chunks...' % (i, sz)
                 awoo.post_reply(board, thread, chunk)
-                print 'Posted %d/%d chunks...' % (i, sz)
                 i += 1
-                sleep(1)
+                sleep(5)
 
             f.close()
     except awoo.AwooException as e:

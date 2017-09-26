@@ -137,7 +137,7 @@ def eval_cmd(sel, toks):
     try:
         CMD_DICT[toks[0]](sel, toks)
 
-        if toks[0] != 'r' and toks[0] != '!!':
+        if toks[0] != 'r' and toks[0] != '!!' and toks[0] != 'repeat':
             sel.last_cmd = toks
     except KeyError:
         if toks[0]:

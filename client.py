@@ -130,6 +130,9 @@ def comment_or_blankfag(post):
     else:
         return colors.red('[[BLANKFAG]]')
 
+def title_or_blankfag(thread):
+    return thread['title'] or '[[BLANKFAG]]'
+
 def eval_cmd(sel, toks):
     try:
         CMD_DICT[toks[0]](sel, toks)
@@ -153,7 +156,7 @@ def threads_format(sel, page, threads):
             '%s. %s' % (colors.red('No'), colors.green('%d' % thr['post_id'])),
             color_hash(cap_or_hash(thr)),
             colors.yellow(get_date(thr['date_posted'])),
-            colors.green(thr['title']),
+            colors.green(title_or_blankfag(thr)),
             colors.yellow('%d' % thr['number_of_replies']),
             colors.red(thr['board']),
             comment_or_blankfag(thr),
@@ -167,7 +170,7 @@ def replies_format(replies):
         '%s. %s' % (colors.red('No'), colors.green('%d' % replies[0]['post_id'])),
         color_hash(cap_or_hash(replies[0])),
         colors.yellow(get_date(replies[0]['date_posted'])),
-        colors.green(replies[0]['title']),
+        colors.green(title_or_blankfag(replies[0])),
         colors.yellow('%d' % replies[0]['number_of_replies']),
         colors.red(replies[0]['board']),
         comment_or_blankfag(replies[0])

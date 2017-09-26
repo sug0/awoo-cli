@@ -2,6 +2,7 @@ import awoo
 import colors
 import utils.database as database
 
+from re import compile as re_compile, M as re_M
 from utils.colortrans import rgb2short
 from datetime import datetime
 from subprocess import Popen, PIPE
@@ -17,6 +18,8 @@ TMP_ = environ.get('TMP') if os_name == 'nt' else '/tmp'
 DB_PATH = '%s%s%s' % (environ.get('HOME') or environ.get('HOMEPATH'), sep, '.awoo_threads_pinned.gz')
 DB = database.load(DB_PATH) or []
 PROMPT = colors.red('>>>')
+RE_1 = (re_compile(r'(^>[^>].*$)', re_M), colors.red(r'\1'))
+RE_2 = (re_compile(r'(>>\d+)'), colors.cyan(r'\1'))
 
 def TMP(path):
     return '%s%s%s' % (TMP_, sep, '__%s__' % path)
@@ -118,7 +121,14 @@ def cap_or_hash(post):
     return post.get('capcode') or post['hash']
 
 def comment_or_blankfag(post):
-    return post['comment'] or colors.red('[[BLANKFAG]]')
+    comment = post['comment']
+
+    if comment:
+        comment = RE_1[0].sub(RE_1[1], comment.replace('\r\n', '\n'))
+        comment = RE_2[0].sub(RE_2[1], comment)
+        return comment
+    else:
+        return colors.red('[[BLANKFAG]]')
 
 def eval_cmd(sel, toks):
     try:

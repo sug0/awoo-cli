@@ -20,6 +20,7 @@ DB = database.load(DB_PATH) or []
 PROMPT = colors.red('>>>')
 RE_1 = (re_compile(r'(^>[^>].*$)', re_M), colors.red(r'\1'))
 RE_2 = (re_compile(r'(>>\d+)'), colors.cyan(r'\1'))
+BOARD_BLACKLIST = []
 
 def TMP(path):
     return '%s%s%s' % (TMP_, sep, '__%s__' % path)
@@ -148,7 +149,11 @@ def threads_format(sel, page, threads):
     bar = colors.cyan('--------------------------------------------------')
     fmt = '\n%s\n%s /%s/ - %s\n%s\n\n' % (bar, ppt, colors.cyan(sel.board), colors.green(sel.desc), bar)
 
-    threads = [thr for thr in threads if 'title' in thr]
+    if sel.board == sel.default and BOARD_BLACKLIST:
+        threads = [thr for thr in threads if 'title' in thr and thr['board'] not in BOARD_BLACKLIST]
+    else:
+        threads = [thr for thr in threads if 'title' in thr]
+
     threads = sorted(threads, key=lambda thr: thr['last_bumped'], reverse=True)
 
     for thr in threads:
@@ -542,7 +547,7 @@ def cmd_pinned(_, _0):
 
     less(fmt)
 
-def cmd_last_cmd(sel, toks):
+def cmd_last_cmd(sel, _):
     """\
     Executes the last command again.
 
@@ -554,6 +559,68 @@ def cmd_last_cmd(sel, toks):
 
     print ' '.join(sel.last_cmd)
     eval_cmd(sel, sel.last_cmd)
+
+def cmd_blacklist(_, _0):
+    """\
+    Lists the blacklisted boards.
+
+    Usage: blacklist"""
+
+    if BOARD_BLACKLIST:
+        for board in BOARD_BLACKLIST:
+            stdout.write('%s  ' % board)
+
+        stdout.write('\n')
+    else:
+        print 'Board blacklist is empty.'
+
+def cmd_filter(sel, toks):
+    """\
+    Temporarily filters a board.
+
+    Usage: filter [awoo board]
+           filter all"""
+
+    if len(toks) < 2:
+        print 'No board to filter.'
+        return
+
+    global BOARD_BLACKLIST
+
+    if toks[1] == 'all':
+        BOARD_BLACKLIST = awoo.get_boards()
+        print 'Filtered all boards.'
+        return
+
+    if toks[1] in awoo.get_boards():
+        BOARD_BLACKLIST.append(toks[1])
+        print 'Added "%s" to board blacklist.' % toks[1]
+    else:
+        print "Board \"%s\" doesn't exist." % toks[1]
+
+def cmd_unfilter(_, toks):
+    """\
+    Removes a board from the blacklist.
+
+    Usage: unfilter [awoo board]
+           unfilter all"""
+
+    if len(toks) < 2:
+        print 'No board to unfilter.'
+        return
+
+    global BOARD_BLACKLIST
+
+    if toks[1] == 'all':
+        del BOARD_BLACKLIST[:]
+        print 'Cleared the blacklist.'
+        return
+
+    try:
+        BOARD_BLACKLIST.remove(toks[1])
+        print 'Removed "%s" from the blacklist.' % toks[1]
+    except ValueError:
+        print "Can't find \"%s\" in the blacklist." % toks[1]
 
 # dictionary contains the appropriate functions
 # to call upon a certain command being read
@@ -591,6 +658,9 @@ CMD_DICT = {
     '!!': cmd_last_cmd,
     'r': cmd_last_cmd,
     'repeat': cmd_last_cmd,
+    'blacklist': cmd_blacklist,
+    'filter': cmd_filter,
+    'unfilter': cmd_unfilter,
 }
 
 def main():

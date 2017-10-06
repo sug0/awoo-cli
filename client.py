@@ -424,7 +424,7 @@ def cmd_search(_, toks):
         print "Board \"%s\" doesn't exist." % toks[1]
         return
 
-    query = ' '.join(ts).lower()
+    query = re_compile(' '.join(ts).lower(), re_M)
 
     page = 0
     threads = awoo.get_threads(toks[1], page)
@@ -442,23 +442,25 @@ def cmd_search(_, toks):
 
                 if replies:
                     comment = replies[0]['title'].lower()
-                    i = comment.find(query)
+                    m = query.search(comment)
 
-                    if i >= 0:
-                        found = comment[i:41].replace('\r', '').replace('\n', ' ')
+                    if m:
+                        found = comment[m.start():41].replace('\r', '').replace('\n', ' ')
                         fmt = colors.white('(...%s...)' % found, style='faint')
-                        id = colors.green(str(r['post_id']))
+                        id = colors.green(str(replies[0]['post_id']))
                         print '    ', colors.cyan('|'), 'Found in title %s %s.' % (id, fmt)
+                        del m
 
                     for r in replies:
                         comment = r['comment'].lower()
-                        i = comment.find(query)
+                        m = query.search(comment)
 
-                        if i >= 0:
-                            found = comment[i:41].replace('\r', '').replace('\n', ' ')
+                        if m:
+                            found = comment[m.start():41].replace('\r', '').replace('\n', ' ')
                             fmt = colors.white('(...%s...)' % found, style='faint')
                             id = colors.green(str(r['post_id']))
                             print '    ', colors.cyan('|'), 'Found in reply %s %s.' % (id, fmt)
+                            del m
 
             page += 1
             threads = awoo.get_threads(toks[1], page)

@@ -86,7 +86,7 @@ def edit_(file):
 
     try:
         with open(file, 'r') as f:
-            reply = f.read().strip()
+            reply = f.read().rstrip()
             f.close()
     except IOError:
         return None

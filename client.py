@@ -134,6 +134,12 @@ def comment_or_blankfag(post):
 def title_or_blankfag(thread):
     return thread['title'] or '[[BLANKFAG]]'
 
+def color_reply_count(thread):
+    if thread['is_locked']:
+        return colors.red('%dL' % thread['number_of_replies'])
+    else:
+        return colors.yellow('%d' % thread['number_of_replies'])
+
 def eval_cmd(sel, toks):
     try:
         CMD_DICT[toks[0]](sel, toks)
@@ -162,7 +168,7 @@ def threads_format(sel, page, threads):
             color_hash(cap_or_hash(thr)),
             colors.yellow(get_date(thr['date_posted'])),
             colors.green(title_or_blankfag(thr)),
-            colors.yellow('%d' % thr['number_of_replies']),
+            color_reply_count(thr),
             colors.red(thr['board']),
             comment_or_blankfag(thr),
             colors.cyan('Last bumped on: %s' % get_date(thr['last_bumped']))
@@ -176,7 +182,7 @@ def replies_format(replies):
         color_hash(cap_or_hash(replies[0])),
         colors.yellow(get_date(replies[0]['date_posted'])),
         colors.green(title_or_blankfag(replies[0])),
-        colors.yellow('%d' % replies[0]['number_of_replies']),
+        color_reply_count(replies[0]),
         colors.red(replies[0]['board']),
         comment_or_blankfag(replies[0])
     )
@@ -406,7 +412,7 @@ def cmd_new_thread(sel, toks):
     except awoo.AwooException as e:
         print e.message
 
-def cmd_search(_, toks):
+def cmd_search(sel, toks):
     """\
     Searches for a string of text in a board.
 
@@ -433,7 +439,12 @@ def cmd_search(_, toks):
         try:
             print 'Searching page %s.' % colors.red(str(page))
 
-            _threads = [thr for thr in threads if 'title' in thr]
+            _threads = None
+
+            if toks[1] == sel.default and BOARD_BLACKLIST:
+                _threads = [thr for thr in threads if 'title' in thr and thr['board'] not in BOARD_BLACKLIST]
+            else:
+                _threads = [thr for thr in threads if 'title' in thr]
 
             for thr in _threads:
                 print '  ', colors.green('>'), 'Searching thread %s.' % colors.magenta('/%s/%d' % (toks[1], thr['post_id']))

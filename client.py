@@ -605,6 +605,10 @@ def cmd_filter(sel, toks):
         print 'Filtered all boards.'
         return
 
+    if toks[1] in BOARD_BLACKLIST:
+        print 'Board "%s" is already being filtered.' % toks[1]
+        return
+
     if toks[1] in awoo.get_boards():
         BOARD_BLACKLIST.append(toks[1])
         print 'Added "%s" to board blacklist.' % toks[1]

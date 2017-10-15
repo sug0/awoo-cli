@@ -296,7 +296,7 @@ def cmd_selected(sel, _):
 
     Usage: sel|pwd"""
 
-    print 'Browsing "%s"' % sel.board
+    print 'Browsing "%s".' % sel.board
 
 def cmd_cd(sel, toks):
     """\
@@ -496,6 +496,10 @@ def cmd_pin_thread(_, toks):
         id = int(toks[1])
     except ValueError:
         print 'Invalid thread id "%s".' % toks[1]
+        return
+
+    if id in [x for (x, _) in DB]:
+        print 'Thread "%d" is already in database.' % id
         return
 
     valid_thread = awoo.thread_exists(id)

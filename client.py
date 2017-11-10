@@ -15,7 +15,8 @@ PAGER = environ.get('PAGER') or MORE
 EDITOR = environ.get('EDITOR') or ('notepad.exe' if os_name == 'nt' else 'vi')
 CLEAR = 'cls' if os_name == 'nt' else 'clear'
 TMP_ = environ.get('TMP') if os_name == 'nt' else '/tmp'
-DB_PATH = '%s%s%s' % (environ.get('HOME') or environ.get('HOMEPATH'), sep, '.awoo_threads_pinned.gz')
+HOME = environ.get('HOME') or environ.get('HOMEPATH')
+DB_PATH = '%s%s%s' % (HOME, sep, '.awoo_threads_pinned.gz')
 DB = database.load(DB_PATH) or []
 PROMPT = colors.red('>>>')
 RE_1 = (re_compile(r'(^>[^>].*$)', re_M), colors.red(r'\1'))
@@ -49,6 +50,21 @@ class CurrentBoard:
 
         self.board = board['name']
         self.desc = board['desc']
+
+def tokenize(line):
+    return line.decode('utf-8').split(' ')
+
+def eval_awoo(sel, line):
+    toks = tokenize(line)
+    eval_cmd(sel, toks)
+
+def load_rc(sel):
+    try:
+        with open('%s%s%s' % (HOME, sep, '.awoorc'), 'r') as f:
+            map(lambda line: eval_awoo(sel, line), f.read().rstrip().split('\n'))
+            f.close()
+    except IOError:
+        pass
 
 def flush_database():
     database.write(DB, DB_PATH)
@@ -691,6 +707,9 @@ def main():
         print '%s:%d is down.' % (awoo.conn.cfg['host'], awoo.conn.cfg['port'])
         exit(1)
 
+    # load '$HOME/.awoorc' if it exists
+    load_rc(sel)
+
     while True:
         try:
             # print prompt
@@ -708,8 +727,7 @@ def main():
                 line = line.strip()
 
             # eval commands read
-            toks = line.decode('utf-8').split(' ')
-            eval_cmd(sel, toks)
+            eval_awoo(sel, line)
         except (IOError, KeyboardInterrupt):
             stdout.write('\n')
             continue

@@ -1,14 +1,18 @@
 import awoo
+import codecs
+
+def split_utf8(s, n):
+    while len(s) > n:
+        k = n
+        while (ord(s[k]) & 0xc0) == 0x80:
+            k -= 1
+        yield s[:k]
+        s = s[k:]
+
+    yield s
 
 def sep_chunks(f, size=500):
-    chunks = []
-
-    chnk = f.read(size)
-
-    while chnk:
-        chunks.append(chnk)
-        chnk = f.read(size)
-
+    chunks = [chk for chk in split_utf8(f.read().encode('utf-8'), size)]
     return chunks
 
 def main(argv):
@@ -17,7 +21,7 @@ def main(argv):
         exit(1)
 
     try:
-        with open(argv[3], 'r') as f:
+        with codecs.open(argv[3], 'r', encoding='utf-8', errors='ignore') as f:
             chunks = sep_chunks(f)
             board = argv[1]
             thread = int(argv[2])

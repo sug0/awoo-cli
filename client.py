@@ -21,6 +21,7 @@ DB = database.load(DB_PATH) or []
 PROMPT = colors.red('>>>')
 RE_1 = (re_compile(r'(^>[^>].*$)', re_M), colors.red(r'\1'))
 RE_2 = (re_compile(r'(>>\d+)'), colors.cyan(r'\1'))
+RE_BOARD = re_compile(r'([^/]+)(\d+)?')
 BOARD_BLACKLIST = []
 
 def TMP(path):
@@ -432,7 +433,7 @@ def cmd_search(sel, toks):
     """\
     Searches for a string of text in a board.
 
-    Usage: search|find [board] [search string]"""
+    Usage: search|find [board][/starting_page] [search string]"""
 
     ts = toks[2:]
 
@@ -442,13 +443,23 @@ def cmd_search(sel, toks):
     elif not ts:
         print 'Empty search string, not performing query.'
         return
-    elif toks[1] not in awoo.get_boards():
+
+    board_info = RE_BOARD.findall(toks[1])
+    toks[1] = board_info[0][0]
+
+    if toks[1] not in awoo.get_boards():
         print "Board \"%s\" doesn't exist." % toks[1]
         return
 
     query = re_compile(' '.join(ts).lower(), re_M)
+    page = None
 
-    page = 0
+    try:
+        page = int(board_info[1][0]) if len(board_info) > 1 else 0
+    except ValueError:
+        print 'Invalid starting page \"%s\" specified.' % board_info[1][0]
+        return
+
     threads = awoo.get_threads(toks[1], page)
 
     while threads:

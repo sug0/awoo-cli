@@ -2,6 +2,7 @@ import awoo
 import colors
 import utils.database as database
 
+from re import compile as re_compile, M as re_M
 from utils.colortrans import rgb2short
 from datetime import datetime
 from subprocess import Popen, PIPE
@@ -14,9 +15,14 @@ PAGER = environ.get('PAGER') or MORE
 EDITOR = environ.get('EDITOR') or ('notepad.exe' if os_name == 'nt' else 'vi')
 CLEAR = 'cls' if os_name == 'nt' else 'clear'
 TMP_ = environ.get('TMP') if os_name == 'nt' else '/tmp'
-DB_PATH = '%s%s%s' % (environ.get('HOME') or environ.get('HOMEPATH'), sep, '.awoo_threads_pinned.gz')
+HOME = environ.get('HOME') or environ.get('HOMEPATH')
+DB_PATH = '%s%s%s' % (HOME, sep, '.awoo_threads_pinned.gz')
 DB = database.load(DB_PATH) or []
 PROMPT = colors.red('>>>')
+RE_1 = (re_compile(r'(^>[^>].*$)', re_M), colors.red(r'\1'))
+RE_2 = (re_compile(r'(>>\d+)'), colors.cyan(r'\1'))
+RE_BOARD = re_compile(r'([^/]+)(\d+)?')
+BOARD_BLACKLIST = []
 
 def TMP(path):
     return '%s%s%s' % (TMP_, sep, '__%s__' % path)
@@ -45,6 +51,21 @@ class CurrentBoard:
 
         self.board = board['name']
         self.desc = board['desc']
+
+def tokenize(line):
+    return line.decode('utf-8').split(' ')
+
+def eval_awoo(sel, line):
+    toks = tokenize(line)
+    eval_cmd(sel, toks)
+
+def load_rc(sel):
+    try:
+        with open('%s%s%s' % (HOME, sep, '.awoorc'), 'r') as f:
+            map(lambda line: eval_awoo(sel, line), f.read().rstrip().split('\n'))
+            f.close()
+    except IOError:
+        pass
 
 def flush_database():
     database.write(DB, DB_PATH)
@@ -82,7 +103,7 @@ def edit_(file):
 
     try:
         with open(file, 'r') as f:
-            reply = f.read().strip()
+            reply = f.read().rstrip()
             f.close()
     except IOError:
         return None
@@ -118,13 +139,29 @@ def cap_or_hash(post):
     return post.get('capcode') or post['hash']
 
 def comment_or_blankfag(post):
-    return post['comment'] or colors.red('[[BLANKFAG]]')
+    comment = post['comment']
+
+    if comment:
+        comment = RE_1[0].sub(RE_1[1], comment.replace('\r\n', '\n'))
+        comment = RE_2[0].sub(RE_2[1], comment)
+        return comment
+    else:
+        return colors.red('[[BLANKFAG]]')
+
+def title_or_blankfag(thread):
+    return thread['title'] or '[[BLANKFAG]]'
+
+def color_reply_count(thread):
+    if thread['is_locked']:
+        return colors.red('%dL' % thread['number_of_replies'])
+    else:
+        return colors.yellow('%d' % thread['number_of_replies'])
 
 def eval_cmd(sel, toks):
     try:
         CMD_DICT[toks[0]](sel, toks)
 
-        if toks[0] != 'r' and toks[0] != '!!':
+        if toks[0] != 'r' and toks[0] != '!!' and toks[0] != 'repeat':
             sel.last_cmd = toks
     except KeyError:
         if toks[0]:
@@ -135,7 +172,11 @@ def threads_format(sel, page, threads):
     bar = colors.cyan('--------------------------------------------------')
     fmt = '\n%s\n%s /%s/ - %s\n%s\n\n' % (bar, ppt, colors.cyan(sel.board), colors.green(sel.desc), bar)
 
-    threads = [thr for thr in threads if 'title' in thr]
+    if sel.board == sel.default and BOARD_BLACKLIST:
+        threads = [thr for thr in threads if 'title' in thr and thr['board'] not in BOARD_BLACKLIST]
+    else:
+        threads = [thr for thr in threads if 'title' in thr]
+
     threads = sorted(threads, key=lambda thr: thr['last_bumped'], reverse=True)
 
     for thr in threads:
@@ -143,8 +184,8 @@ def threads_format(sel, page, threads):
             '%s. %s' % (colors.red('No'), colors.green('%d' % thr['post_id'])),
             color_hash(cap_or_hash(thr)),
             colors.yellow(get_date(thr['date_posted'])),
-            colors.green(thr['title']),
-            colors.yellow('%d' % thr['number_of_replies']),
+            colors.green(title_or_blankfag(thr)),
+            color_reply_count(thr),
             colors.red(thr['board']),
             comment_or_blankfag(thr),
             colors.cyan('Last bumped on: %s' % get_date(thr['last_bumped']))
@@ -157,8 +198,8 @@ def replies_format(replies):
         '%s. %s' % (colors.red('No'), colors.green('%d' % replies[0]['post_id'])),
         color_hash(cap_or_hash(replies[0])),
         colors.yellow(get_date(replies[0]['date_posted'])),
-        colors.green(replies[0]['title']),
-        colors.yellow('%d' % replies[0]['number_of_replies']),
+        colors.green(title_or_blankfag(replies[0])),
+        color_reply_count(replies[0]),
         colors.red(replies[0]['board']),
         comment_or_blankfag(replies[0])
     )
@@ -272,7 +313,7 @@ def cmd_selected(sel, _):
 
     Usage: sel|pwd"""
 
-    print 'Browsing "%s"' % sel.board
+    print 'Browsing "%s".' % sel.board
 
 def cmd_cd(sel, toks):
     """\
@@ -388,11 +429,11 @@ def cmd_new_thread(sel, toks):
     except awoo.AwooException as e:
         print e.message
 
-def cmd_search(_, toks):
+def cmd_search(sel, toks):
     """\
     Searches for a string of text in a board.
 
-    Usage: search|find [board] [search string]"""
+    Usage: search|find [board][/starting_page] [search string]"""
 
     ts = toks[2:]
 
@@ -402,20 +443,35 @@ def cmd_search(_, toks):
     elif not ts:
         print 'Empty search string, not performing query.'
         return
-    elif toks[1] not in awoo.get_boards():
+
+    board_info = RE_BOARD.findall(toks[1])
+    toks[1] = board_info[0][0]
+
+    if toks[1] not in awoo.get_boards():
         print "Board \"%s\" doesn't exist." % toks[1]
         return
 
-    query = ' '.join(ts).lower()
+    query = re_compile(' '.join(ts).lower(), re_M)
+    page = None
 
-    page = 0
+    try:
+        page = int(board_info[1][0]) if len(board_info) > 1 else 0
+    except ValueError:
+        print 'Invalid starting page \"%s\" specified.' % board_info[1][0]
+        return
+
     threads = awoo.get_threads(toks[1], page)
 
     while threads:
         try:
             print 'Searching page %s.' % colors.red(str(page))
 
-            _threads = [thr for thr in threads if 'title' in thr]
+            _threads = None
+
+            if toks[1] == sel.default and BOARD_BLACKLIST:
+                _threads = [thr for thr in threads if 'title' in thr and thr['board'] not in BOARD_BLACKLIST]
+            else:
+                _threads = [thr for thr in threads if 'title' in thr]
 
             for thr in _threads:
                 print '  ', colors.green('>'), 'Searching thread %s.' % colors.magenta('/%s/%d' % (toks[1], thr['post_id']))
@@ -424,23 +480,25 @@ def cmd_search(_, toks):
 
                 if replies:
                     comment = replies[0]['title'].lower()
-                    i = comment.find(query)
+                    m = query.search(comment)
 
-                    if i >= 0:
-                        found = comment[i:41].replace('\r', '').replace('\n', ' ')
+                    if m:
+                        found = comment[m.start():41].replace('\r', '').replace('\n', ' ')
                         fmt = colors.white('(...%s...)' % found, style='faint')
-                        id = colors.green(str(r['post_id']))
+                        id = colors.green(str(replies[0]['post_id']))
                         print '    ', colors.cyan('|'), 'Found in title %s %s.' % (id, fmt)
+                        del m
 
                     for r in replies:
                         comment = r['comment'].lower()
-                        i = comment.find(query)
+                        m = query.search(comment)
 
-                        if i >= 0:
-                            found = comment[i:41].replace('\r', '').replace('\n', ' ')
+                        if m:
+                            found = comment[m.start():41].replace('\r', '').replace('\n', ' ')
                             fmt = colors.white('(...%s...)' % found, style='faint')
                             id = colors.green(str(r['post_id']))
                             print '    ', colors.cyan('|'), 'Found in reply %s %s.' % (id, fmt)
+                            del m
 
             page += 1
             threads = awoo.get_threads(toks[1], page)
@@ -465,6 +523,10 @@ def cmd_pin_thread(_, toks):
         id = int(toks[1])
     except ValueError:
         print 'Invalid thread id "%s".' % toks[1]
+        return
+
+    if id in [x for (x, _) in DB]:
+        print 'Thread "%d" is already in database.' % id
         return
 
     valid_thread = awoo.thread_exists(id)
@@ -529,7 +591,7 @@ def cmd_pinned(_, _0):
 
     less(fmt)
 
-def cmd_last_cmd(sel, toks):
+def cmd_last_cmd(sel, _):
     """\
     Executes the last command again.
 
@@ -541,6 +603,72 @@ def cmd_last_cmd(sel, toks):
 
     print ' '.join(sel.last_cmd)
     eval_cmd(sel, sel.last_cmd)
+
+def cmd_blacklist(_, _0):
+    """\
+    Lists the blacklisted boards.
+
+    Usage: blacklist"""
+
+    if BOARD_BLACKLIST:
+        for board in BOARD_BLACKLIST:
+            stdout.write('%s  ' % board)
+
+        stdout.write('\n')
+    else:
+        print 'Board blacklist is empty.'
+
+def cmd_filter(sel, toks):
+    """\
+    Temporarily filters a board.
+
+    Usage: filter [awoo board]
+           filter all"""
+
+    if len(toks) < 2:
+        print 'No board to filter.'
+        return
+
+    global BOARD_BLACKLIST
+
+    if toks[1] == 'all':
+        BOARD_BLACKLIST = awoo.get_boards()
+        print 'Filtered all boards.'
+        return
+
+    if toks[1] in BOARD_BLACKLIST:
+        print 'Board "%s" is already being filtered.' % toks[1]
+        return
+
+    if toks[1] in awoo.get_boards():
+        BOARD_BLACKLIST.append(toks[1])
+        print 'Added "%s" to board blacklist.' % toks[1]
+    else:
+        print "Board \"%s\" doesn't exist." % toks[1]
+
+def cmd_unfilter(_, toks):
+    """\
+    Removes a board from the blacklist.
+
+    Usage: unfilter [awoo board]
+           unfilter all"""
+
+    if len(toks) < 2:
+        print 'No board to unfilter.'
+        return
+
+    global BOARD_BLACKLIST
+
+    if toks[1] == 'all':
+        del BOARD_BLACKLIST[:]
+        print 'Cleared the blacklist.'
+        return
+
+    try:
+        BOARD_BLACKLIST.remove(toks[1])
+        print 'Removed "%s" from the blacklist.' % toks[1]
+    except ValueError:
+        print "Can't find \"%s\" in the blacklist." % toks[1]
 
 # dictionary contains the appropriate functions
 # to call upon a certain command being read
@@ -578,6 +706,9 @@ CMD_DICT = {
     '!!': cmd_last_cmd,
     'r': cmd_last_cmd,
     'repeat': cmd_last_cmd,
+    'blacklist': cmd_blacklist,
+    'filter': cmd_filter,
+    'unfilter': cmd_unfilter,
 }
 
 def main():
@@ -586,6 +717,9 @@ def main():
     except awoo.AwooException:
         print '%s:%d is down.' % (awoo.conn.cfg['host'], awoo.conn.cfg['port'])
         exit(1)
+
+    # load '$HOME/.awoorc' if it exists
+    load_rc(sel)
 
     while True:
         try:
@@ -604,8 +738,7 @@ def main():
                 line = line.strip()
 
             # eval commands read
-            toks = line.decode('utf-8').split(' ')
-            eval_cmd(sel, toks)
+            eval_awoo(sel, line)
         except (IOError, KeyboardInterrupt):
             stdout.write('\n')
             continue

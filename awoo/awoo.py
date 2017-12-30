@@ -1,4 +1,5 @@
 import conn
+from re import search
 from json import loads as jload
 
 # httplib exceptions won't be caught
@@ -36,7 +37,9 @@ def new_thread(board, title, comment):
         'title': title 
     }
 
-    return conn.get_path(conn.post('/post', params, CLIENT_HEADERS).getheader('Location'))
+    path = conn.get_path(conn.post('/post', params, CLIENT_HEADERS).getheader('Location'))
+
+    return '/%s/%s' % (board, search(r'\d+', path).group(0))
 
 def thread_exists(thread_id):
     rsp = conn.head('/api/v2/thread/%d/replies' % thread_id, CLIENT_HEADERS)

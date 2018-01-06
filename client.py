@@ -56,6 +56,9 @@ def tokenize(line):
     return line.decode('utf-8').split(' ')
 
 def eval_awoo(sel, line):
+    if line and line[0] == '#':
+        return
+
     toks = tokenize(line)
     eval_cmd(sel, toks)
 

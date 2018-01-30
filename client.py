@@ -152,7 +152,7 @@ def comment_or_blankfag(post):
         return colors.red('[[BLANKFAG]]')
 
 def title_or_blankfag(thread):
-    return thread['title'] or '[[BLANKFAG]]'
+    return thread.get('title') or '[[BLANKFAG]]'
 
 def color_reply_count(thread):
     if thread['is_locked']:
@@ -216,6 +216,22 @@ def replies_format(replies):
         )
 
     fmt += colors.cyan('Last bumped on: %s' % get_date(replies[0]['last_bumped']))
+
+    return fmt
+
+def search_format(query, threads):
+    ppt = PROMPT
+    bar = colors.cyan('--------------------------------------------------')
+    text = colors.cyan('Search results for: %s' % colors.yellow(query))
+    fmt = '\n%s\n%s %s\n%s\n\n' % (bar, ppt, text, bar)
+
+    for thr in threads:
+        fmt += "%s [%s] %s [%s]\n--------------------------------------------------\n\n" % (
+            '%s. %s' % (colors.red('No'), colors.green('%d' % thr['post_id'])),
+            color_hash(cap_or_hash(thr)),
+            colors.green(title_or_blankfag(thr)),
+            colors.red(thr['board']),
+        )
 
     return fmt
 
@@ -431,6 +447,33 @@ def cmd_new_thread(sel, toks):
         print 'Successfully started %s.' % thr
     except awoo.AwooException as e:
         print e.message
+
+def cmd_search2(sel, toks):
+    """\
+    Searches for a string of text in a board, using a faster yet less detailed method.
+
+    Usage: search2|find2 [board] [search string]"""
+
+    ts = toks[2:]
+
+    if len(toks) < 2:
+        print 'No board or search string given.'
+        return
+    elif not ts:
+        print 'Empty search string, not performing query.'
+        return
+    elif toks[1] not in awoo.get_boards():
+        print "Board \"%s\" doesn't exist." % toks[1]
+        return
+
+    query = ' '.join(ts)
+    threads = awoo.search(toks[1], query)
+
+    if threads:
+        thr_fmt = search_format(query, threads)
+        less(thr_fmt)
+    else:
+        print 'Nothing found for the given search string.'
 
 def cmd_search(sel, toks):
     """\
@@ -706,6 +749,8 @@ CMD_DICT = {
     'pinned': cmd_pinned,
     'search': cmd_search,
     'find': cmd_search,
+    'search2': cmd_search2,
+    'find2': cmd_search2,
     '!!': cmd_last_cmd,
     'r': cmd_last_cmd,
     'repeat': cmd_last_cmd,

@@ -82,10 +82,12 @@ def get_thread_metadata(thread_id):
 
 def search(board, terms, advanced=False):
     path = '/api/v2/search' if not advanced else '/api/v2/advanced_search'
-    opts = {'board_select': board, 'search_text': terms}
-    rsp = conn.get_with_params(path, opts, CLIENT_HEADERS)
+    params = {'board_select': board, 'search_text': terms}
+    rsp = conn.post(path, params, CLIENT_HEADERS)
 
     if rsp.status != 200:
+        print rsp.reason
+        print rsp.msg
         return None
     else:
         return jload(rsp.read())

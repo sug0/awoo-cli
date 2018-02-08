@@ -59,7 +59,13 @@ def eval_awoo(sel, line):
     if line and line[0] == '#':
         return
 
+    # strip the newline char
+    line = line.strip()
+
+    # tokenize input
     toks = tokenize(line)
+
+    # eval that shit
     eval_cmd(sel, toks)
 
 def load_rc(sel):
@@ -777,13 +783,10 @@ def main():
             # read line from stdin
             line = stdin.readline()
 
+            # exit on 'EOF'
             if not line:
-                # exit on 'EOF'
                 stdout.write('\n')
                 exit(0)
-            else:
-                # strip the newline character
-                line = line.strip()
 
             # eval commands read
             eval_awoo(sel, line)

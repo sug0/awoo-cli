@@ -56,11 +56,12 @@ def tokenize(line):
     return line.decode('utf-8').split(' ')
 
 def eval_awoo(sel, line):
-    if line and line[0] == '#':
-        return
-
     # strip the newline char
     line = line.strip()
+
+    # ignore comments
+    if line and line[0] == '#':
+        return
 
     # tokenize input
     toks = tokenize(line)

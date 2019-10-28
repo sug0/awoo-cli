@@ -1,12 +1,12 @@
 import awoo
 import colors
+import fileinput
 import utils.database as database
 
 from re import compile as re_compile, M as re_M
 from utils.colortrans import rgb2short
 from datetime import datetime
 from subprocess import Popen, PIPE
-from sys import stdin, stdout, exit
 from os import environ, name as os_name, system, sep, remove
 
 # 'more' is usually present in all relevant OSes
@@ -94,7 +94,7 @@ def remove_all_thr_database():
 
 def less(data):
     process = Popen([PAGER], stdin=PIPE)
-    data = data if isinstance(data, str) else str(data.encode('utf-8'))
+    data = data if isinstance(data, bytes) else bytes(data, encoding='utf-8')
 
     try:
         process.stdin.write(data)
@@ -287,9 +287,9 @@ def cmd_get_boards(_, _0):
     Usage: ls|gb|get_boards"""
 
     for board in awoo.get_boards():
-        stdout.write('%s  ' % board)
+        print(board, end='  ')
 
-    stdout.write('\n')
+    print('')
 
 def cmd_get_threads(sel, toks):
     """\
@@ -665,9 +665,9 @@ def cmd_blacklist(_, _0):
 
     if BOARD_BLACKLIST:
         for board in BOARD_BLACKLIST:
-            stdout.write('%s  ' % board)
+            print(board, end='  ')
 
-        stdout.write('\n')
+        print('')
     else:
         print('Board blacklist is empty.')
 
@@ -776,23 +776,24 @@ def main():
     # load '$HOME/.awoorc' if it exists
     load_rc(sel)
 
+    # line reader
+    lines = fileinput.input()
+
     while True:
+        # print prompt
+        #print(PROMPT, end=' ')
+
+        # read line from stdin and eval commands read
         try:
-            # print(prompt)
-            stdout.write('%s ' % PROMPT)
-
-            # read line from stdin
-            line = stdin.readline()
-
-            # exit on 'EOF'
-            if not line:
-                stdout.write('\n')
-                exit(0)
-
-            # eval commands read
+            line = next(lines)
             eval_awoo(sel, line)
+        # exit on 'EOF'
+        except StopIteration:
+            print('')
+            exit(0)
+        # ignore ctrl-c and such
         except (IOError, KeyboardInterrupt):
-            stdout.write('\n')
+            print('')
             continue
 
 if __name__ == '__main__':

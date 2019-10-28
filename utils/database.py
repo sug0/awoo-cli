@@ -1,5 +1,5 @@
 import gzip
-import cPickle as pickle
+import pickle
 
 from io import BytesIO
 

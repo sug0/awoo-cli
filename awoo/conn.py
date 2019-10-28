@@ -1,7 +1,7 @@
 from os import environ, sep
-from urllib import urlencode
+from urllib.parse import urlencode
 from json import load as load_config
-from httplib import HTTPSConnection as _https, HTTPConnection as _http
+from http.client import HTTPSConnection as _https, HTTPConnection as _http
 
 # load config from package dir
 cfg = None

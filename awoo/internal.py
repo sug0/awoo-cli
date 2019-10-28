@@ -1,4 +1,5 @@
-import conn
+import awoo.conn as conn
+
 from re import search
 from json import loads as jload
 

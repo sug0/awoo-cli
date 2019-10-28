@@ -53,7 +53,7 @@ class CurrentBoard:
         self.desc = board['desc']
 
 def tokenize(line):
-    return line.decode('utf-8').split(' ')
+    return line.split(' ')
 
 def eval_awoo(sel, line):
     toks = tokenize(line)
@@ -111,7 +111,7 @@ def edit_(file):
     try:
         remove(file)
     except OSError:
-        print "Temp file is already removed, skipping step."
+        print("Temp file is already removed, skipping step.")
 
     return reply
 
@@ -165,7 +165,7 @@ def eval_cmd(sel, toks):
             sel.last_cmd = toks
     except KeyError:
         if toks[0]:
-            print 'Command "%s" not available. Try "help".' % toks[0]
+            print('Command "%s" not available. Try "help".' % toks[0])
 
 def threads_format(sel, page, threads):
     ppt = PROMPT
@@ -236,7 +236,7 @@ def cmd_help(_, toks):
             less('%s:\n%s' % (toks[1], CMD_DICT[toks[1]].__doc__)
                 or 'No help available for "%s".' % toks[1])
         except KeyError:
-            print 'Command "%s" not available.' % toks[1]
+            print('Command "%s" not available.' % toks[1])
 
 def cmd_clear(_, _0):
     """\
@@ -279,7 +279,7 @@ def cmd_get_threads(sel, toks):
         thr_fmt = threads_format(sel, page, threads)
         less(thr_fmt)
     else:
-        print 'No threads on page %d.' % page
+        print('No threads on page %d.' % page)
 
 def cmd_get_replies(sel, toks):
     """\
@@ -293,16 +293,16 @@ def cmd_get_replies(sel, toks):
     try:
         id = int(toks[1])
     except IndexError:
-        print 'No thread id specified.'
+        print('No thread id specified.')
         return
     except ValueError:
-        print 'Invalid thread id "%s".' % toks[1]
+        print('Invalid thread id "%s".' % toks[1])
         return
 
     replies = awoo.get_thread_replies(id)
 
     if not replies:
-        print 'Invalid thread id "%d".' % id
+        print('Invalid thread id "%d".' % id)
     else:
         thr_fmt = replies_format(replies)
         less(thr_fmt)
@@ -313,7 +313,7 @@ def cmd_selected(sel, _):
 
     Usage: sel|pwd"""
 
-    print 'Browsing "%s".' % sel.board
+    print('Browsing "%s".' % sel.board)
 
 def cmd_cd(sel, toks):
     """\
@@ -324,21 +324,21 @@ def cmd_cd(sel, toks):
 
     if len(toks) < 2:
         if sel.board == sel.default:
-            print 'Already browsing "%s".' % sel.default
+            print('Already browsing "%s".' % sel.default)
             return
         else:
             sel.cd()
-            print 'Now browsing "%s".' % sel.default
+            print('Now browsing "%s".' % sel.default)
             return
 
     try:
         if sel.board == toks[1]:
-            print 'Already browsing "%s".' % toks[1]
+            print('Already browsing "%s".' % toks[1])
         else:
             sel.cd(toks[1])
-            print 'Now browsing "%s".' % toks[1]
+            print('Now browsing "%s".' % toks[1])
     except awoo.AwooException:
-        print "Board \"%s\" doesn't exist." % toks[1]
+        print("Board \"%s\" doesn't exist." % toks[1])
 
 def cmd_send_reply(sel, toks):
     """\
@@ -351,27 +351,27 @@ def cmd_send_reply(sel, toks):
     try:
         id = int(toks[1])
     except IndexError:
-        print 'No thread id specified.'
+        print('No thread id specified.')
         return
     except ValueError:
-        print 'Invalid thread id "%s".' % toks[1]
+        print('Invalid thread id "%s".' % toks[1])
         return
 
     valid_thread = awoo.thread_exists(id)
 
     if not valid_thread:
-        print 'Invalid thread id "%d".' % id
+        print('Invalid thread id "%d".' % id)
     else:
         reply = edit_(TMP('reply_body_%d' % id))
 
         if reply:
             try:
                 awoo.post_reply(sel.board, id, reply)
-                print 'Successfully replied to %d.' % id
+                print('Successfully replied to %d.' % id)
             except awoo.AwooException as e:
-                print e.message
+                print(e.message)
         else:
-            print 'Empty body, not posting reply.'
+            print('Empty body, not posting reply.')
 
 def cmd_blankpost(sel, toks):
     """\
@@ -384,22 +384,22 @@ def cmd_blankpost(sel, toks):
     try:
         id = int(toks[1])
     except IndexError:
-        print 'No thread id specified.'
+        print('No thread id specified.')
         return
     except ValueError:
-        print 'Invalid thread id "%s".' % toks[1]
+        print('Invalid thread id "%s".' % toks[1])
         return
 
     valid_thread = awoo.thread_exists(id)
 
     if not valid_thread:
-        print 'Invalid thread id "%d".' % id
+        print('Invalid thread id "%d".' % id)
     else:
         try:
             awoo.post_reply(sel.board, id, '')
-            print 'Successfully sent blankpost to %d.' % id
+            print('Successfully sent blankpost to %d.' % id)
         except awoo.AwooException as e:
-            print e.message
+            print(e.message)
 
 def cmd_new_thread(sel, toks):
     """\
@@ -408,26 +408,26 @@ def cmd_new_thread(sel, toks):
     Usage: nt|new_thread"""
 
     if sel.board == sel.default:
-        print 'Please chooose a different board, "%s" is selected.' % sel.default
+        print('Please chooose a different board, "%s" is selected.' % sel.default)
         return
 
     title = edit_(TMP('thread_title_%s' % sel.board))
 
     if not title:
-        print 'Empty title, not posting new thread.'
+        print('Empty title, not posting new thread.')
         return
 
     reply = edit_(TMP('thread_body_%s' % sel.board))
 
     if not reply:
-        print 'Empty body, not posting new thread.'
+        print('Empty body, not posting new thread.')
         return
 
     try:
         thr = awoo.new_thread(sel.board, title, reply)
-        print 'Successfully started %s.' % thr
+        print('Successfully started %s.' % thr)
     except awoo.AwooException as e:
-        print e.message
+        print(e.message)
 
 def cmd_search(sel, toks):
     """\
@@ -438,17 +438,17 @@ def cmd_search(sel, toks):
     ts = toks[2:]
 
     if len(toks) < 2:
-        print 'No board or search string given.'
+        print('No board or search string given.')
         return
     elif not ts:
-        print 'Empty search string, not performing query.'
+        print('Empty search string, not performing query.')
         return
 
     board_info = RE_BOARD.findall(toks[1])
     toks[1] = board_info[0][0]
 
     if toks[1] not in awoo.get_boards():
-        print "Board \"%s\" doesn't exist." % toks[1]
+        print("Board \"%s\" doesn't exist." % toks[1])
         return
 
     query = re_compile(' '.join(ts).lower(), re_M)
@@ -457,14 +457,14 @@ def cmd_search(sel, toks):
     try:
         page = int(board_info[1][0]) if len(board_info) > 1 else 0
     except ValueError:
-        print 'Invalid starting page \"%s\" specified.' % board_info[1][0]
+        print('Invalid starting page \"%s\" specified.' % board_info[1][0])
         return
 
     threads = awoo.get_threads(toks[1], page)
 
     while threads:
         try:
-            print 'Searching page %s.' % colors.red(str(page))
+            print('Searching page %s.' % colors.red(str(page)))
 
             _threads = None
 
@@ -474,7 +474,7 @@ def cmd_search(sel, toks):
                 _threads = [thr for thr in threads if 'title' in thr]
 
             for thr in _threads:
-                print '  ', colors.green('>'), 'Searching thread %s.' % colors.magenta('/%s/%d' % (toks[1], thr['post_id']))
+                print('  ', colors.green('>'), 'Searching thread %s.' % colors.magenta('/%s/%d' % (toks[1], thr['post_id'])))
 
                 replies = awoo.get_thread_replies(thr['post_id'])
 
@@ -486,7 +486,7 @@ def cmd_search(sel, toks):
                         found = comment[m.start():41].replace('\r', '').replace('\n', ' ')
                         fmt = colors.white('(...%s...)' % found, style='faint')
                         id = colors.green(str(replies[0]['post_id']))
-                        print '    ', colors.cyan('|'), 'Found in title %s %s.' % (id, fmt)
+                        print('    ', colors.cyan('|'), 'Found in title %s %s.' % (id, fmt))
                         del m
 
                     for r in replies:
@@ -497,13 +497,13 @@ def cmd_search(sel, toks):
                             found = comment[m.start():41].replace('\r', '').replace('\n', ' ')
                             fmt = colors.white('(...%s...)' % found, style='faint')
                             id = colors.green(str(r['post_id']))
-                            print '    ', colors.cyan('|'), 'Found in reply %s %s.' % (id, fmt)
+                            print('    ', colors.cyan('|'), 'Found in reply %s %s.' % (id, fmt))
                             del m
 
             page += 1
             threads = awoo.get_threads(toks[1], page)
         except KeyboardInterrupt:
-            print 'Search interrupted.'
+            print('Search interrupted.')
             break
 
 def cmd_pin_thread(_, toks):
@@ -513,7 +513,7 @@ def cmd_pin_thread(_, toks):
     Usage: pin [awoo thread] [description]"""
 
     if len(toks) < 3:
-        print 'No thread or description given.'
+        print('No thread or description given.')
         return
 
     id = None
@@ -522,23 +522,23 @@ def cmd_pin_thread(_, toks):
     try:
         id = int(toks[1])
     except ValueError:
-        print 'Invalid thread id "%s".' % toks[1]
+        print('Invalid thread id "%s".' % toks[1])
         return
 
     if id in [x for (x, _) in DB]:
-        print 'Thread "%d" is already in database.' % id
+        print('Thread "%d" is already in database.' % id)
         return
 
     valid_thread = awoo.thread_exists(id)
 
     if not valid_thread:
-        print 'Invalid thread id "%d".' % id
+        print('Invalid thread id "%d".' % id)
         return
 
     desc = ' '.join(ts)
 
     write_new_thr_database(id, desc)
-    print 'Successfully saved thread "%d" in database.' % id
+    print('Successfully saved thread "%d" in database.' % id)
 
 def cmd_unpin_thread(_, toks):
     """\
@@ -547,11 +547,11 @@ def cmd_unpin_thread(_, toks):
     Usage: unpin [awoo thread]"""
 
     if not DB:
-        print 'No threads in pinned list.'
+        print('No threads in pinned list.')
         return
 
     if len(toks) < 2:
-        print 'No thread given.'
+        print('No thread given.')
         return
 
     id = None
@@ -561,18 +561,18 @@ def cmd_unpin_thread(_, toks):
     except ValueError:
         if toks[1] == 'all':
             remove_all_thr_database()
-            print 'Successfully removed all threads from pinned list.'
+            print('Successfully removed all threads from pinned list.')
             return
         else:
-            print 'Invalid thread id "%s".' % toks[1]
+            print('Invalid thread id "%s".' % toks[1])
             return
 
     if id not in [_id for _id, _ in DB]:
-        print "Can't find \"%d\" in pinned list." % id
+        print("Can't find \"%d\" in pinned list." % id)
         return
 
     remove_thr_database(id)
-    print 'Successfully removed thread "%d" from pinned list.' % id
+    print('Successfully removed thread "%d" from pinned list.' % id)
 
 def cmd_pinned(_, _0):
     """\
@@ -581,7 +581,7 @@ def cmd_pinned(_, _0):
     Usage: pinned"""
 
     if not DB:
-        print 'No threads in pinned list.'
+        print('No threads in pinned list.')
         return
 
     fmt = ''
@@ -598,10 +598,10 @@ def cmd_last_cmd(sel, _):
     Usage: r|repeat|!!"""
 
     if not sel.last_cmd:
-        print 'No last command successfully executed in history.'
+        print('No last command successfully executed in history.')
         return
 
-    print ' '.join(sel.last_cmd)
+    print(' '.join(sel.last_cmd))
     eval_cmd(sel, sel.last_cmd)
 
 def cmd_blacklist(_, _0):
@@ -616,7 +616,7 @@ def cmd_blacklist(_, _0):
 
         stdout.write('\n')
     else:
-        print 'Board blacklist is empty.'
+        print('Board blacklist is empty.')
 
 def cmd_filter(sel, toks):
     """\
@@ -626,25 +626,25 @@ def cmd_filter(sel, toks):
            filter all"""
 
     if len(toks) < 2:
-        print 'No board to filter.'
+        print('No board to filter.')
         return
 
     global BOARD_BLACKLIST
 
     if toks[1] == 'all':
         BOARD_BLACKLIST = awoo.get_boards()
-        print 'Filtered all boards.'
+        print('Filtered all boards.')
         return
 
     if toks[1] in BOARD_BLACKLIST:
-        print 'Board "%s" is already being filtered.' % toks[1]
+        print('Board "%s" is already being filtered.' % toks[1])
         return
 
     if toks[1] in awoo.get_boards():
         BOARD_BLACKLIST.append(toks[1])
-        print 'Added "%s" to board blacklist.' % toks[1]
+        print('Added "%s" to board blacklist.' % toks[1])
     else:
-        print "Board \"%s\" doesn't exist." % toks[1]
+        print("Board \"%s\" doesn't exist." % toks[1])
 
 def cmd_unfilter(_, toks):
     """\
@@ -654,21 +654,21 @@ def cmd_unfilter(_, toks):
            unfilter all"""
 
     if len(toks) < 2:
-        print 'No board to unfilter.'
+        print('No board to unfilter.')
         return
 
     global BOARD_BLACKLIST
 
     if toks[1] == 'all':
         del BOARD_BLACKLIST[:]
-        print 'Cleared the blacklist.'
+        print('Cleared the blacklist.')
         return
 
     try:
         BOARD_BLACKLIST.remove(toks[1])
-        print 'Removed "%s" from the blacklist.' % toks[1]
+        print('Removed "%s" from the blacklist.' % toks[1])
     except ValueError:
-        print "Can't find \"%s\" in the blacklist." % toks[1]
+        print("Can't find \"%s\" in the blacklist." % toks[1])
 
 # dictionary contains the appropriate functions
 # to call upon a certain command being read
@@ -715,7 +715,7 @@ def main():
     try:
         sel = CurrentBoard()
     except awoo.AwooException:
-        print '%s:%d is down.' % (awoo.conn.cfg['host'], awoo.conn.cfg['port'])
+        print('%s:%d is down.' % (awoo.conn.cfg['host'], awoo.conn.cfg['port']))
         exit(1)
 
     # load '$HOME/.awoorc' if it exists
@@ -723,7 +723,7 @@ def main():
 
     while True:
         try:
-            # print prompt
+            # print(prompt)
             stdout.write('%s ' % PROMPT)
 
             # read line from stdin

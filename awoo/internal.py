@@ -1,6 +1,6 @@
 import awoo.conn as conn
 
-from re import search
+from re import search as re_search
 from json import loads as jload
 
 # httplib exceptions won't be caught
@@ -40,7 +40,7 @@ def new_thread(board, title, comment):
 
     path = conn.get_path(conn.post('/post', params, CLIENT_HEADERS).getheader('Location'))
 
-    return '/%s/%s' % (board, search(r'\d+', path).group(0))
+    return '/%s/%s' % (board, re_search(r'\d+', path).group(0))
 
 def thread_exists(thread_id):
     rsp = conn.head('/api/v2/thread/%d/replies' % thread_id, CLIENT_HEADERS)
@@ -77,6 +77,18 @@ def get_thread_metadata(thread_id):
     rsp = conn.get('/api/v2/thread/%d/metadata' % thread_id, CLIENT_HEADERS)
 
     if rsp.status != 200:
+        return None
+    else:
+        return jload(rsp.read())
+
+def search(board, terms, advanced=False):
+    path = '/api/v2/search' if not advanced else '/api/v2/advanced_search'
+    params = {'board_select': board, 'search_text': terms}
+    rsp = conn.post(path, params, CLIENT_HEADERS)
+
+    if rsp.status != 200:
+        print(rsp.reason)
+        print(rsp.msg)
         return None
     else:
         return jload(rsp.read())

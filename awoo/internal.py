@@ -14,7 +14,7 @@ class AwooException(Exception):
     pass
 
 def post_reply(board, parent, content):
-    if len(content.decode('utf-8')) > 500:
+    if len(content) > 500:
         raise AwooException('Post too long (over 500 characters).')
 
     params = {
@@ -29,7 +29,7 @@ def post_reply(board, parent, content):
         raise AwooException('Failed to post reply to %s:%d' % (h, p))
 
 def new_thread(board, title, comment):
-    if len(comment.decode('utf-8')) > 500 or len(title.decode('utf-8')) > 500:
+    if len(comment) > 500 or len(title) > 500:
         raise AwooException('Post too long (over 500 characters).')
 
     params = {

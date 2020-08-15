@@ -1,6 +1,5 @@
 import awoo
 import colors
-import fileinput
 import utils.database as database
 
 from re import compile as re_compile, M as re_M
@@ -8,6 +7,8 @@ from utils.colortrans import rgb2short
 from datetime import datetime
 from subprocess import Popen, PIPE
 from os import environ, name as os_name, system, sep, remove
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
 
 # 'more' is usually present in all relevant OSes
 MORE = 'more.com' if os_name == 'nt' else 'more'
@@ -776,24 +777,19 @@ def main():
     # load '$HOME/.awoorc' if it exists
     load_rc(sel)
 
-    # line reader
-    lines = fileinput.input()
+    # command auto completion
+    completer = WordCompleter(list(CMD_DICT.keys()))
 
     while True:
-        # print prompt
-        #print(PROMPT, end=' ')
-
         # read line from stdin and eval commands read
         try:
-            line = next(lines)
+            line = prompt('>>> ', completer=completer)
             eval_awoo(sel, line)
         # exit on 'EOF'
-        except StopIteration:
-            print('')
+        except EOFError:
             exit(0)
         # ignore ctrl-c and such
         except (IOError, KeyboardInterrupt):
-            print('')
             continue
 
 if __name__ == '__main__':
